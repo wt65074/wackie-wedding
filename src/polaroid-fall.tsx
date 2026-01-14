@@ -188,7 +188,7 @@ export default function PolaroidFall(): React.ReactElement {
       const randomX = Math.random() * viewportWidth;
       const randomY = Math.random() * viewportHeight;
       addPolaroid(randomX, randomY);
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [addPolaroid]);
@@ -220,21 +220,13 @@ export default function PolaroidFall(): React.ReactElement {
         pointerEvents: 'none',
         zIndex: 0,
       }}>
-        <style>{`
-          @font-face {
-            font-family: 'Tiempos Headline';
-            src: url('https://cdn.sanity.io/files/4zrzovbb/website/408d38444e73f08bd3b3ea36f4eb46312ca6e0b3.woff2') format('woff2');
-            font-weight: 400;
-            font-style: normal;
-          }
-        `}</style>
         <p style={{
           fontSize: '6rem',
-          fontFamily: '"Tiempos Headline", Georgia, serif',
+          fontFamily: '"Fraunces", Georgia, serif',
           fontWeight: 400,
           margin: 0,
           whiteSpace: 'nowrap',
-          textShadow: '0 1px 1px rgba(255,255,255,0.5), 0 -1px 1px rgba(0,0,0,0.08)',
+          //textShadow: '0 1px 1px rgba(255,255,255,0.5), 0 -1px 1px rgba(0,0,0,0.08)',
         }}>
           Coming Soon
         </p>

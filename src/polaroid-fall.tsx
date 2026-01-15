@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { usePolaroidImages } from './hooks/usePolaroidImages';
 
 interface SwayResult {
   x: number;
@@ -8,6 +9,8 @@ interface SwayResult {
 interface PolaroidData {
   id: number;
   image: string;
+  caption: string | null;
+  photoDate: string | null;
   startX: number;
   startY: number;
   finalX: number;
@@ -83,12 +86,29 @@ export default function PolaroidFall(): React.ReactElement {
   const [polaroids, setPolaroids] = useState<PolaroidData[]>([]);
   const [, setNextId] = useState<number>(0);
   const nextIdRef = useRef<number>(0);
+  const { getRandomImage, hasImages } = usePolaroidImages();
 
-  const addPolaroid = useCallback((clickX: number, clickY: number): void => {
+  const addPolaroid = useCallback(async (clickX: number, clickY: number): Promise<void> => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const randomImage = generateRandomImage();
+    // Try to get image from Supabase, fall back to generated SVG
+    let imageUrl: string;
+    let caption: string | null = null;
+    let photoDate: string | null = null;
+
+    if (hasImages) {
+      const dbImage = await getRandomImage();
+      if (dbImage) {
+        imageUrl = dbImage.imageUrl;
+        caption = dbImage.caption;
+        photoDate = dbImage.photoDate;
+      } else {
+        imageUrl = generateRandomImage();
+      }
+    } else {
+      imageUrl = generateRandomImage();
+    }
 
     // Landing position - use rejection sampling to reduce center probability
     const viewportCenterX = viewportWidth / 2;
@@ -156,7 +176,9 @@ export default function PolaroidFall(): React.ReactElement {
 
     const newPolaroid: PolaroidData = {
       id: currentId,
-      image: randomImage,
+      image: imageUrl,
+      caption,
+      photoDate,
       startX,
       startY,
       finalX,
@@ -174,7 +196,7 @@ export default function PolaroidFall(): React.ReactElement {
 
     setPolaroids(prev => [...prev, newPolaroid]);
     setNextId(currentId + 1);
-  }, []);
+  }, [getRandomImage, hasImages]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     addPolaroid(e.clientX, e.clientY);
@@ -221,12 +243,11 @@ export default function PolaroidFall(): React.ReactElement {
         zIndex: 0,
       }}>
         <p style={{
-          fontSize: '6rem',
+          fontSize: 'clamp(2.5rem, 10vw, 6rem)',
           fontFamily: '"Fraunces", Georgia, serif',
           fontWeight: 400,
           margin: 0,
           whiteSpace: 'nowrap',
-          //textShadow: '0 1px 1px rgba(255,255,255,0.5), 0 -1px 1px rgba(0,0,0,0.08)',
         }}>
           Coming Soon
         </p>
@@ -266,6 +287,8 @@ function createSwayFunction(seed: number): (t: number) => SwayResult {
 
 function Polaroid({
   image,
+  caption,
+  photoDate,
   startX,
   startY,
   finalX,
@@ -429,8 +452,13 @@ function Polaroid({
           fontSize: '11px',
           color: '#666',
           whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: '124px',
         }}>
-          {new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
+          {caption || (photoDate
+            ? new Date(photoDate).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+            : new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' }))}
         </span>
       </div>
 

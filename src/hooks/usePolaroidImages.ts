@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase, STORAGE_BUCKET } from '../lib/supabase';
 
 export interface PolaroidImage {
@@ -8,76 +8,69 @@ export interface PolaroidImage {
   photoDate: string | null;
 }
 
-const MAX_TO_CACHE = 100;
-
 // Module-level state to persist across component re-renders
-let availableIds: number[] = [];
+let allImages: PolaroidImage[] = [];
 let usedIds = new Set<number>();
-let idsLoaded = false;
+let imagesLoaded = false;
 let loadPromise: Promise<void> | null = null;
 
-async function loadAvailableIds(): Promise<void> {
+async function loadAllImages(): Promise<void> {
   if (!supabase) return;
-  if (idsLoaded) return;
+  if (imagesLoaded) return;
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
     const { data, error } = await supabase
       .from('polaroids')
-      .select('id')
-      .limit(MAX_TO_CACHE);
+      .select('*');
 
-    if (!error && data) {
-      availableIds = data.map(row => row.id);
-      idsLoaded = true;
+    if (error || !data) return;
+
+    allImages = data.map(row => {
+      const { data: urlData } = supabase!.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(row.image_path);
+
+      return {
+        id: row.id,
+        imageUrl: urlData.publicUrl,
+        caption: row.caption,
+        photoDate: row.photo_date,
+      };
+    });
+
+    imagesLoaded = true;
+
+    // Preload all images into browser cache
+    for (const image of allImages) {
+      const img = new Image();
+      img.src = image.imageUrl;
     }
   })();
 
   return loadPromise;
 }
 
-function pickRandomId(): number | null {
-  const unused = availableIds.filter(id => !usedIds.has(id));
+function pickRandomImage(): PolaroidImage | null {
+  if (allImages.length === 0) return null;
+
+  const unused = allImages.filter(img => !usedIds.has(img.id));
 
   if (unused.length === 0) {
     usedIds.clear();
-    if (availableIds.length === 0) return null;
-    const id = availableIds[Math.floor(Math.random() * availableIds.length)];
-    usedIds.add(id);
-    return id;
+    const image = allImages[Math.floor(Math.random() * allImages.length)];
+    usedIds.add(image.id);
+    return image;
   }
 
-  const id = unused[Math.floor(Math.random() * unused.length)];
-  usedIds.add(id);
-  return id;
-}
-
-async function fetchPolaroidById(id: number): Promise<PolaroidImage | null> {
-  if (!supabase) return null;
-
-  const { data, error } = await supabase
-    .from('polaroids')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error || !data) return null;
-
-  const { data: urlData } = supabase.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(data.image_path);
-
-  return {
-    id: data.id,
-    imageUrl: urlData.publicUrl,
-    caption: data.caption,
-    photoDate: data.photo_date,
-  };
+  const image = unused[Math.floor(Math.random() * unused.length)];
+  usedIds.add(image.id);
+  return image;
 }
 
 export function usePolaroidImages() {
-  const [isReady, setIsReady] = useState(idsLoaded);
-  const [hasImages, setHasImages] = useState(availableIds.length > 0);
+  const [isReady, setIsReady] = useState(imagesLoaded);
+  const [hasImages, setHasImages] = useState(allImages.length > 0);
 
   useEffect(() => {
     if (!supabase) {
@@ -85,19 +78,15 @@ export function usePolaroidImages() {
       return;
     }
 
-    loadAvailableIds().then(() => {
+    loadAllImages().then(() => {
       setIsReady(true);
-      setHasImages(availableIds.length > 0);
+      setHasImages(allImages.length > 0);
     });
   }, []);
 
-  const getRandomImage = useCallback(async (): Promise<PolaroidImage | null> => {
+  const getRandomImage = useCallback((): PolaroidImage | null => {
     if (!supabase || !isReady) return null;
-
-    const id = pickRandomId();
-    if (id === null) return null;
-
-    return fetchPolaroidById(id);
+    return pickRandomImage();
   }, [isReady]);
 
   return {

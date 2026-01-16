@@ -10,13 +10,13 @@ if (!supabaseUrl || !supabaseKey) {
   console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
   process.exit(1);
 }
-
 const supabase = createClient(supabaseUrl, supabaseKey);
+console.log(supabase)
 
 async function seedPolaroids() {
   // List all files in the bucket
   const { data: files, error: listError } = await supabase.storage
-    .from('polaroid-images')
+    .from('polaroids')
     .list();
 
   if (listError) {
@@ -25,7 +25,7 @@ async function seedPolaroids() {
   }
 
   if (!files || files.length === 0) {
-    console.log('No files found in polaroid-images bucket');
+    console.log('No files found in polaroids bucket');
     return;
   }
 

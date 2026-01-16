@@ -225,7 +225,7 @@ export default function PolaroidFall(): React.ReactElement {
       onClick={handleClick}
       style={{
         width: '100vw',
-        height: '100vh',
+        height: '100dvh',
         background: '#FAF9F7',
         overflow: 'hidden',
         cursor: 'pointer',

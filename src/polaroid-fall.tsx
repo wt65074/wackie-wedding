@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { usePolaroidImages } from './hooks/usePolaroidImages';
+import { useMessages } from './hooks/useMessages';
+import MessageInput from './components/MessageInput';
 
 interface SwayResult {
   x: number;
@@ -11,6 +13,7 @@ interface PolaroidData {
   image: string;
   caption: string | null;
   photoDate: string | null;
+  message: string | null;
   startX: number;
   startY: number;
   finalX: number;
@@ -85,8 +88,11 @@ function gaussianRandom(mean: number, stdDev: number): number {
 export default function PolaroidFall(): React.ReactElement {
   const [polaroids, setPolaroids] = useState<PolaroidData[]>([]);
   const [, setNextId] = useState<number>(0);
+  const [isMessageInputOpen, setIsMessageInputOpen] = useState(false);
+  const [messageInputImage, setMessageInputImage] = useState<string | null>(null);
   const nextIdRef = useRef<number>(0);
   const { getRandomImage, hasImages } = usePolaroidImages();
+  const { getRandomMessage, submitMessage, hasMessages } = useMessages();
 
   const addPolaroid = useCallback(async (clickX: number, clickY: number): Promise<void> => {
     const viewportWidth = window.innerWidth;
@@ -96,6 +102,7 @@ export default function PolaroidFall(): React.ReactElement {
     let imageUrl: string;
     let caption: string | null = null;
     let photoDate: string | null = null;
+    let message: string | null = null;
 
     if (hasImages) {
       const dbImage = await getRandomImage();
@@ -103,6 +110,14 @@ export default function PolaroidFall(): React.ReactElement {
         imageUrl = dbImage.imageUrl;
         caption = dbImage.caption;
         photoDate = dbImage.photoDate;
+
+        // Show a visitor message instead of caption
+        if (hasMessages) {
+          const randomMessage = getRandomMessage();
+          if (randomMessage) {
+            message = randomMessage.text;
+          }
+        }
       } else {
         imageUrl = generateRandomImage();
       }
@@ -179,6 +194,7 @@ export default function PolaroidFall(): React.ReactElement {
       image: imageUrl,
       caption,
       photoDate,
+      message,
       startX,
       startY,
       finalX,
@@ -196,7 +212,7 @@ export default function PolaroidFall(): React.ReactElement {
 
     setPolaroids(prev => [...prev, newPolaroid]);
     setNextId(currentId + 1);
-  }, [getRandomImage, hasImages]);
+  }, [getRandomImage, hasImages, hasMessages, getRandomMessage]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     addPolaroid(e.clientX, e.clientY);
@@ -218,6 +234,32 @@ export default function PolaroidFall(): React.ReactElement {
   // Remove polaroid when it finishes fading
   const removePolaroid = useCallback((id: number): void => {
     setPolaroids(prev => prev.filter(p => p.id !== id));
+  }, []);
+
+  // Spacebar listener to open message modal
+  useEffect(() => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isMessageInputOpen) {
+        e.preventDefault();
+        if (hasImages) {
+          const image = await getRandomImage();
+          setMessageInputImage(image?.imageUrl || null);
+        } else {
+          setMessageInputImage(null);
+        }
+        setIsMessageInputOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMessageInputOpen, hasImages, getRandomImage]);
+  const handleMessageSubmit = useCallback(async (text: string): Promise<boolean> => {
+    return submitMessage(text);
+  }, [submitMessage]);
+
+  const handleMessageClose = useCallback(() => {
+    setIsMessageInputOpen(false);
+    setMessageInputImage(null);
   }, []);
 
   return (
@@ -251,11 +293,41 @@ export default function PolaroidFall(): React.ReactElement {
         }}>
           Coming Soon
         </p>
+        <p style={{
+          fontSize: 'clamp(0.75rem, 2vw, 1rem)',
+          fontFamily: '"Fraunces", Georgia, serif',
+          fontWeight: 500,
+          margin: '16px 0 0 0',
+          color: '#8B7E74',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+        }}>
+          Press
+          <span style={{
+            display: 'inline-block',
+            padding: '4px 16px',
+            background: 'rgba(232, 168, 124, 0.15)',
+            border: '1px solid rgba(232, 168, 124, 0.4)',
+            borderRadius: '4px',
+            fontSize: '0.85em',
+            fontStyle: 'normal',
+            fontFamily: '"Fraunces", Georgia, serif',
+          }}>
+            space
+          </span>
+          to leave a message
+        </p>
       </div>
 
       {polaroids.map((polaroid) => (
         <Polaroid key={polaroid.id} {...polaroid} onFadeComplete={removePolaroid} />
       ))}
+
+      {isMessageInputOpen && (
+        <MessageInput imageUrl={messageInputImage} onSubmit={handleMessageSubmit} onClose={handleMessageClose} />
+      )}
     </div>
   );
 }
@@ -289,6 +361,7 @@ function Polaroid({
   image,
   caption,
   photoDate,
+  message,
   startX,
   startY,
   finalX,
@@ -456,7 +529,7 @@ function Polaroid({
           textOverflow: 'ellipsis',
           maxWidth: '124px',
         }}>
-          {caption || (photoDate
+          {message || caption || (photoDate
             ? new Date(photoDate).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
             : new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' }))}
         </span>

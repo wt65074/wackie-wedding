@@ -2,7 +2,9 @@
 
 ## To Do
 
-- [ ] **Implement signed URLs for image protection** - Switch from `getPublicUrl()` to `createSignedUrls()` (batch API) in Supabase Storage to prevent direct image URL sharing. Requires making the `polaroids` bucket private and updating `usePolaroidImages.ts`.
+- [ ] **Add "question about us" gate for site access** - Require visitors to answer a personal question about Will & Jackie before accessing the site (e.g., "Where did we meet?", "What's our dog's name?", "What city was our first date?"). Store the answer hash in localStorage so they only need to answer once. Could rotate questions or have multiple valid answers. Makes the site feel personal and limits access to people who actually know the couple.
+
+- [ ] **Implement signed URLs for image protection** - Switch from `getPublicUrl()` to `createSignedUrls()` (batch API) in Supabase Storage to prevent direct image URL sharing. Requires making the `polaroids` bucket private and updating `usePolaroidImages.ts`. Note: This only provides meaningful security if combined with authentication (see "question gate" item above).
 
 - [ ] **Implement pagination for polaroid loading** - Instead of loading all images at once, load first 10 and serve from those, then fetch another batch of 10 in the background. Only use the expanded pool (20) once the background fetch completes. Continue this pattern for larger datasets.
 
@@ -11,6 +13,12 @@
 - [ ] **Refactor usePolaroidImages to use proper React patterns** - Currently uses module-level static variables (`allImages`, `usedIds`, `loadPromise`) which is not idiomatic React. Refactor to use React Context for shared state, useRef for mutable values, or a data-fetching library like TanStack Query.
 
 - [ ] **Generate Supabase types and set up CI** - Use `supabase gen types typescript` to generate TypeScript types from the database schema. Set up GitHub Actions for Supabase CI (run migrations, generate types, validate schema changes on PRs).
+
+- [ ] **Improve iMessage/text sharing preview** - Add Open Graph meta tags (`og:title`, `og:description`, `og:image`) and Apple-specific tags for a polished link preview in iMessage. Design a nice preview image that represents the site well instead of the generic fallback.
+
+- [ ] **Add fun text with text effects** - Replace or enhance "Coming Soon" with playful text like "Will + Jackie = Wackie". Add CSS text effects (animations, gradients, shadows, letter spacing transitions, etc.) to make it feel whimsical and celebratory.
+
+- [ ] **Add reactions to photos** - Let visitors react to polaroids with emojis (❤️, 😂, 🥹, etc.). Store reactions in Supabase and display reaction counts on each photo. Consider showing who reacted or keeping it anonymous.
 
 ## In Progress
 

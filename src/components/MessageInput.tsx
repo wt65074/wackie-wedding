@@ -3,14 +3,16 @@ import { ClipLoader } from 'react-spinners';
 
 interface MessageInputProps {
   imageUrl: string | null;
-  onSubmit: (text: string) => Promise<boolean>;
+  onSubmit: (text: string, signature: string) => Promise<boolean>;
   onClose: () => void;
 }
 
-const MAX_LENGTH = 200;
+const MAX_LENGTH = 300;
+const MAX_SIGNATURE_LENGTH = 50;
 
 export default function MessageInput({ imageUrl, onSubmit, onClose }: MessageInputProps): React.ReactElement {
   const [text, setText] = useState('');
+  const [signature, setSignature] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [floatOffset, setFloatOffset] = useState(0);
@@ -57,10 +59,11 @@ export default function MessageInput({ imageUrl, onSubmit, onClose }: MessageInp
     e.preventDefault();
 
     const trimmedText = text.trim();
-    if (!trimmedText || isSubmitting || showSuccess) return;
+    const trimmedSignature = signature.trim();
+    if (!trimmedText || !trimmedSignature || isSubmitting || showSuccess) return;
 
     setIsSubmitting(true);
-    const success = await onSubmit(trimmedText);
+    const success = await onSubmit(trimmedText, trimmedSignature);
     setIsSubmitting(false);
 
     if (success) {
@@ -69,12 +72,19 @@ export default function MessageInput({ imageUrl, onSubmit, onClose }: MessageInp
         onClose();
       }, 750);
     }
-  }, [text, isSubmitting, showSuccess, onSubmit, onClose]);
+  }, [text, signature, isSubmitting, showSuccess, onSubmit, onClose]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newText = e.target.value;
     if (newText.length <= MAX_LENGTH) {
       setText(newText);
+    }
+  }, []);
+
+  const handleSignatureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSignature = e.target.value;
+    if (newSignature.length <= MAX_SIGNATURE_LENGTH) {
+      setSignature(newSignature);
     }
   }, []);
 
@@ -152,7 +162,7 @@ export default function MessageInput({ imageUrl, onSubmit, onClose }: MessageInp
             }} />
           </div>
 
-          {/* Caption area with input */}
+          {/* Caption area with inputs */}
           <div style={{
             padding: '14px 8px 18px 8px',
           }}>
@@ -177,6 +187,27 @@ export default function MessageInput({ imageUrl, onSubmit, onClose }: MessageInp
                 textAlign: 'center',
               }}
             />
+            <input
+              type="text"
+              value={signature}
+              onChange={handleSignatureChange}
+              placeholder="Your name"
+              disabled={isSubmitting}
+              style={{
+                width: '100%',
+                padding: '4px 0',
+                marginTop: '8px',
+                fontSize: '13px',
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontWeight: 500,
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#666',
+                outline: 'none',
+                boxSizing: 'border-box',
+                textAlign: 'center',
+              }}
+            />
             <div style={{
               display: 'flex',
               justifyContent: nearLimit ? 'space-between' : 'center',
@@ -193,19 +224,24 @@ export default function MessageInput({ imageUrl, onSubmit, onClose }: MessageInp
                   {MAX_LENGTH - charCount} left
                 </span>
               )}
-              <span style={{
-                display: 'inline-block',
-                padding: '4px 12px',
-                background: showSuccess ? 'rgba(232, 168, 124, 0.2)' : 'rgba(0, 0, 0, 0.06)',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: showSuccess ? '#E8A87C' : '#999',
-                fontFamily: '"Fraunces", Georgia, serif',
-                transition: 'background 0.2s, color 0.2s',
-              }}>
+              <button
+                type="submit"
+                disabled={isSubmitting || showSuccess || !text.trim() || !signature.trim()}
+                style={{
+                  display: 'inline-block',
+                  padding: '4px 12px',
+                  background: showSuccess ? 'rgba(232, 168, 124, 0.2)' : 'rgba(0, 0, 0, 0.06)',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: showSuccess ? '#E8A87C' : '#999',
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  transition: 'background 0.2s, color 0.2s',
+                  border: 'none',
+                  cursor: isSubmitting || showSuccess || !text.trim() || !signature.trim() ? 'default' : 'pointer',
+                }}>
                 {showSuccess ? '❤️ Thank you!' : isSubmitting ? <ClipLoader size={12} color="#999" /> : '↵'}
-              </span>
+              </button>
             </div>
           </div>
         </div>

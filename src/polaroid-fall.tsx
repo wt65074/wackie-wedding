@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { usePolaroidImages } from './hooks/usePolaroidImages';
 import { useMessages } from './hooks/useMessages';
 import MessageInput from './components/MessageInput';
+import TypingMessage from './components/TypingMessage';
 
 interface SwayResult {
   x: number;
@@ -14,6 +15,7 @@ interface PolaroidData {
   caption: string | null;
   photoDate: string | null;
   message: string | null;
+  signature: string | null;
   startX: number;
   startY: number;
   finalX: number;
@@ -91,6 +93,7 @@ export default function PolaroidFall(): React.ReactElement {
   const [isMessageInputOpen, setIsMessageInputOpen] = useState(false);
   const [messageInputImage, setMessageInputImage] = useState<string | null>(null);
   const nextIdRef = useRef<number>(0);
+  const lastTapRef = useRef<number>(0);
   const { getRandomImage, hasImages } = usePolaroidImages();
   const { getRandomMessage, submitMessage, hasMessages } = useMessages();
 
@@ -103,6 +106,7 @@ export default function PolaroidFall(): React.ReactElement {
     let caption: string | null = null;
     let photoDate: string | null = null;
     let message: string | null = null;
+    let signature: string | null = null;
 
     if (hasImages) {
       const dbImage = await getRandomImage();
@@ -116,6 +120,7 @@ export default function PolaroidFall(): React.ReactElement {
           const randomMessage = getRandomMessage();
           if (randomMessage) {
             message = randomMessage.text;
+            signature = randomMessage.signature;
           }
         }
       } else {
@@ -195,6 +200,7 @@ export default function PolaroidFall(): React.ReactElement {
       caption,
       photoDate,
       message,
+      signature,
       startX,
       startY,
       finalX,
@@ -217,6 +223,29 @@ export default function PolaroidFall(): React.ReactElement {
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     addPolaroid(e.clientX, e.clientY);
   }, [addPolaroid]);
+
+  // Double-tap handler for mobile
+  const handleTouchEnd = useCallback(async (e: React.TouchEvent<HTMLDivElement>) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected - open message input
+      e.preventDefault();
+      if (!isMessageInputOpen) {
+        if (hasImages) {
+          const image = await getRandomImage();
+          setMessageInputImage(image?.imageUrl || null);
+        } else {
+          setMessageInputImage(null);
+        }
+        setIsMessageInputOpen(true);
+      }
+      lastTapRef.current = 0; // Reset to prevent triple-tap
+    } else {
+      lastTapRef.current = now;
+    }
+  }, [isMessageInputOpen, hasImages, getRandomImage]);
 
   // Auto-drop polaroids every 10 seconds
   useEffect(() => {
@@ -253,8 +282,8 @@ export default function PolaroidFall(): React.ReactElement {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMessageInputOpen, hasImages, getRandomImage]);
-  const handleMessageSubmit = useCallback(async (text: string): Promise<boolean> => {
-    return submitMessage(text);
+  const handleMessageSubmit = useCallback(async (text: string, signature: string): Promise<boolean> => {
+    return submitMessage(text, signature);
   }, [submitMessage]);
 
   const handleMessageClose = useCallback(() => {
@@ -265,6 +294,7 @@ export default function PolaroidFall(): React.ReactElement {
   return (
     <div
       onClick={handleClick}
+      onTouchEnd={handleTouchEnd}
       style={{
         width: '100vw',
         height: '100dvh',
@@ -274,6 +304,14 @@ export default function PolaroidFall(): React.ReactElement {
         position: 'relative',
       }}
     >
+      <style>{`
+        .hint-desktop { display: flex; }
+        .hint-mobile { display: none; }
+        @media (max-width: 768px) {
+          .hint-desktop { display: none; }
+          .hint-mobile { display: flex; }
+        }
+      `}</style>
       <div style={{
         position: 'absolute',
         top: '50%',
@@ -293,13 +331,25 @@ export default function PolaroidFall(): React.ReactElement {
         }}>
           Coming Soon
         </p>
-        <p style={{
+        <TypingMessage />
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        bottom: '24px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}>
+        {/* Desktop hint */}
+        <p className="hint-desktop" style={{
           fontSize: 'clamp(0.75rem, 2vw, 1rem)',
           fontFamily: '"Fraunces", Georgia, serif',
           fontWeight: 500,
-          margin: '16px 0 0 0',
-          color: '#8B7E74',
-          display: 'flex',
+          margin: 0,
+          color: '#B8B0A8',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '8px',
@@ -308,14 +358,39 @@ export default function PolaroidFall(): React.ReactElement {
           <span style={{
             display: 'inline-block',
             padding: '4px 16px',
-            background: 'rgba(232, 168, 124, 0.15)',
-            border: '1px solid rgba(232, 168, 124, 0.4)',
+            background: 'rgba(184, 176, 168, 0.15)',
+            border: '1px solid rgba(184, 176, 168, 0.4)',
             borderRadius: '4px',
             fontSize: '0.85em',
             fontStyle: 'normal',
             fontFamily: '"Fraunces", Georgia, serif',
           }}>
             space
+          </span>
+          to leave a message
+        </p>
+        {/* Mobile hint */}
+        <p className="hint-mobile" style={{
+          fontSize: 'clamp(0.75rem, 2vw, 1rem)',
+          fontFamily: '"Fraunces", Georgia, serif',
+          fontWeight: 500,
+          margin: 0,
+          color: '#B8B0A8',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+        }}>
+          <span style={{
+            display: 'inline-block',
+            padding: '4px 16px',
+            background: 'rgba(184, 176, 168, 0.15)',
+            border: '1px solid rgba(184, 176, 168, 0.4)',
+            borderRadius: '4px',
+            fontSize: '0.85em',
+            fontStyle: 'normal',
+            fontFamily: '"Fraunces", Georgia, serif',
+          }}>
+            double tap
           </span>
           to leave a message
         </p>
@@ -362,6 +437,7 @@ function Polaroid({
   caption,
   photoDate,
   message,
+  signature,
   startX,
   startY,
   finalX,
@@ -465,6 +541,12 @@ function Polaroid({
     rotateZ(${initialRotateZ + initialSway.rotation}deg)
   `;
 
+  // Determine what to show in caption area
+  const hasMessageWithSignature = message && signature;
+  const fallbackText = caption || (photoDate
+    ? new Date(photoDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+    : new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+
   return (
     <div
       ref={elementRef}
@@ -473,7 +555,7 @@ function Polaroid({
         left: 0,
         top: 0,
         width: '144px',
-        padding: '10px 10px 36px 10px',
+        padding: hasMessageWithSignature ? '10px 10px 54px 10px' : '10px 10px 36px 10px',
         background: 'linear-gradient(145deg, #FFFFFE 0%, #FFFCF8 100%)',
         transform: initialTransform,
         boxShadow: '0 0 0 rgba(0,0,0,0), 0 0 0 rgba(0,0,0,0)',
@@ -514,25 +596,59 @@ function Polaroid({
         bottom: '0',
         left: '0',
         right: '0',
-        height: '36px',
+        height: hasMessageWithSignature ? '54px' : '36px',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: '0 10px',
+        boxSizing: 'border-box',
       }}>
-        <span style={{
-          fontFamily: 'Georgia, serif',
-          fontStyle: 'italic',
-          fontSize: '11px',
-          color: '#666',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          maxWidth: '124px',
-        }}>
-          {message || caption || (photoDate
-            ? new Date(photoDate).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
-            : new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' }))}
-        </span>
+        {hasMessageWithSignature ? (
+          <>
+            <span style={{
+              fontFamily: 'Georgia, serif',
+              fontStyle: 'italic',
+              fontSize: '10px',
+              color: '#666',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              maxWidth: '124px',
+              textAlign: 'center',
+              lineHeight: '1.3',
+            }}>
+              {message}
+            </span>
+            <span style={{
+              fontFamily: 'Georgia, serif',
+              fontSize: '9px',
+              color: '#888',
+              marginTop: '2px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '124px',
+            }}>
+              ❤️ {signature}
+            </span>
+          </>
+        ) : (
+          <span style={{
+            fontFamily: 'Georgia, serif',
+            fontStyle: 'italic',
+            fontSize: '11px',
+            color: '#666',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '124px',
+          }}>
+            {fallbackText}
+          </span>
+        )}
       </div>
 
       <div style={{

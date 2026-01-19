@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 export interface Message {
   id: number;
   text: string;
+  signature: string;
   polaroidId: number | null;
   createdAt: string;
 }
@@ -30,6 +31,7 @@ async function loadAllMessages(): Promise<void> {
     allMessages = data.map(row => ({
       id: row.id,
       text: row.text,
+      signature: row.signature,
       polaroidId: row.polaroid_id,
       createdAt: row.created_at,
     }));
@@ -78,15 +80,17 @@ export function useMessages() {
     return pickRandomMessage();
   }, [isReady]);
 
-  const submitMessage = useCallback(async (text: string): Promise<boolean> => {
+  const submitMessage = useCallback(async (text: string, signature: string): Promise<boolean> => {
     if (!supabase) return false;
 
     const trimmedText = text.trim();
-    if (!trimmedText || trimmedText.length > 200) return false;
+    const trimmedSignature = signature.trim();
+    if (!trimmedText || trimmedText.length > 300) return false;
+    if (!trimmedSignature || trimmedSignature.length > 50) return false;
 
     const { data, error } = await supabase
       .from('messages')
-      .insert({ text: trimmedText })
+      .insert({ text: trimmedText, signature: trimmedSignature })
       .select()
       .single();
 
@@ -96,6 +100,7 @@ export function useMessages() {
     const newMessage: Message = {
       id: data.id,
       text: data.text,
+      signature: data.signature,
       polaroidId: data.polaroid_id,
       createdAt: data.created_at,
     };

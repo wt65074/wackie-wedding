@@ -2,7 +2,7 @@
 
 ## To Do
 
-- [ ] **Add "question about us" gate for site access** - Require visitors to answer a personal question about Will & Jackie before accessing the site (e.g., "Where did we meet?", "What's our dog's name?", "What city was our first date?"). Store the answer hash in localStorage so they only need to answer once. Could rotate questions or have multiple valid answers. Makes the site feel personal and limits access to people who actually know the couple.
+- [ ] **Deploy security gate Edge Functions** - Generate a strong secret with `openssl rand -base64 32`, then run `supabase secrets set SECURITY_GATE_SECRET="<secret>"`. Deploy Edge Functions with `supabase functions deploy verify-security-answer` and `supabase functions deploy verify-token`. Apply migration with `supabase db push`. Add security questions to the database via Supabase dashboard.
 
 - [ ] **Implement signed URLs for image protection** - Switch from `getPublicUrl()` to `createSignedUrls()` (batch API) in Supabase Storage to prevent direct image URL sharing. Requires making the `polaroids` bucket private and updating `usePolaroidImages.ts`. Note: This only provides meaningful security if combined with authentication (see "question gate" item above).
 
@@ -19,6 +19,12 @@
 - [ ] **Add fun text with text effects** - Replace or enhance "Coming Soon" with playful text like "Will + Jackie = Wackie". Add CSS text effects (animations, gradients, shadows, letter spacing transitions, etc.) to make it feel whimsical and celebratory.
 
 - [ ] **Add reactions to photos** - Let visitors react to polaroids with emojis (❤️, 😂, 🥹, etc.). Store reactions in Supabase and display reaction counts on each photo. Consider showing who reacted or keeping it anonymous.
+
+- [ ] **Move "press space" hint to bottom** - Move the "press space to leave a message" text to the bottom of the screen in a light, subtle font. Should be unobtrusive but discoverable.
+
+- [ ] **Add rotating cute quips as subtitle** - Replace the current subtitle with animated/scrolling text showing cute quips about Will & Jackie. Could include things like "tying the knot", "two become one", "partner in crime acquired", etc. Text should move/animate to add visual interest.
+
+- [ ] **Add security questions before leaving messages** - Before users can leave a message, prompt them to answer one of three personal questions about Will & Jackie (e.g., "Where did we meet?", "What's our dog's name?"). Store validation in localStorage so they only need to answer once. Prevents random strangers from leaving messages.
 
 ## In Progress
 

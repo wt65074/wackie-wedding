@@ -1,7 +1,12 @@
 import PolaroidFall from './polaroid-fall'
+import SecurityGate from './components/SecurityGate'
 
 function App() {
-  return <PolaroidFall />
+  return (
+    <SecurityGate>
+      <PolaroidFall />
+    </SecurityGate>
+  )
 }
 
 export default App

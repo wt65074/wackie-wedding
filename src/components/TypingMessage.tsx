@@ -207,7 +207,7 @@ export default function TypingMessage(): React.ReactElement {
   }, [isReady, hasMessages, getNextMessage]);
 
   if (!isReady || !hasMessages) {
-    return <span style={{ minHeight: '1.5em', display: 'block' }} />;
+    return <span style={{ height: '3em', display: 'block' }} />;
   }
 
   return (
@@ -216,8 +216,10 @@ export default function TypingMessage(): React.ReactElement {
         fontFamily: '"Fraunces", Georgia, serif',
         color: '#B8B0A8',
         fontSize: 'clamp(1rem, 3vw, 1.5rem)',
-        minHeight: '1.5em',
-        display: 'inline-block',
+        height: '3em',
+        lineHeight: 1.4,
+        display: 'block',
+        overflow: 'hidden',
       }}
     >
       <span ref={textRef} style={{ opacity: 0 }} />

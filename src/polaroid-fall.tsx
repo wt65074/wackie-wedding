@@ -312,25 +312,35 @@ export default function PolaroidFall(): React.ReactElement {
           .hint-mobile { display: flex; }
         }
       `}</style>
-      <div style={{
+      {/* Coming Soon - pinned at fixed position */}
+      <p style={{
         position: 'absolute',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        textAlign: 'center',
+        fontSize: 'clamp(2.5rem, 10vw, 6rem)',
+        fontFamily: '"Fraunces", Georgia, serif',
+        fontWeight: 400,
+        margin: 0,
+        whiteSpace: 'nowrap',
         color: '#E8A87C',
         pointerEvents: 'none',
         zIndex: 0,
       }}>
-        <p style={{
-          fontSize: 'clamp(2.5rem, 10vw, 6rem)',
-          fontFamily: '"Fraunces", Georgia, serif',
-          fontWeight: 400,
-          margin: 0,
-          whiteSpace: 'nowrap',
-        }}>
-          Coming Soon
-        </p>
+        Coming Soon
+      </p>
+      {/* Subtext - positioned relative to Coming Soon */}
+      <div style={{
+        position: 'absolute',
+        top: 'calc(50% + clamp(2.5rem, 7vw, 4.5rem))',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+        pointerEvents: 'none',
+        zIndex: 0,
+        width: '90%',
+        maxWidth: '600px',
+      }}>
         <TypingMessage />
       </div>
 

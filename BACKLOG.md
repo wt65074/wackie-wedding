@@ -14,6 +14,8 @@
 
 - [ ] **Generate Supabase types and set up CI** - Use `supabase gen types typescript` to generate TypeScript types from the database schema. Set up GitHub Actions for Supabase CI (run migrations, generate types, validate schema changes on PRs).
 
+- [ ] **Set up automatic deployment for Supabase Edge Functions** - Configure GitHub Actions or similar CI/CD to automatically deploy edge functions when changes are pushed. Look into `supabase functions deploy` in CI, managing secrets, and deployment strategies (deploy all vs. only changed functions).
+
 - [ ] **Improve iMessage/text sharing preview** - Add Open Graph meta tags (`og:title`, `og:description`, `og:image`) and Apple-specific tags for a polished link preview in iMessage. Design a nice preview image that represents the site well instead of the generic fallback.
 
 - [ ] **Add fun text with text effects** - Replace or enhance "Coming Soon" with playful text like "Will + Jackie = Wackie". Add CSS text effects (animations, gradients, shadows, letter spacing transitions, etc.) to make it feel whimsical and celebratory.

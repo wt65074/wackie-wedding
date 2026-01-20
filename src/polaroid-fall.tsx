@@ -150,7 +150,7 @@ export default function PolaroidFall(): React.ReactElement {
     let finalX: number;
     let finalY: number;
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 200;
 
     do {
       // Generate candidate position with gaussian distribution around click
@@ -181,7 +181,6 @@ export default function PolaroidFall(): React.ReactElement {
 
       attempts++;
     } while (attempts < maxAttempts);
-    console.log(attempts)
 
     // Clamp to keep polaroids on screen
     finalX = Math.max(20, Math.min(viewportWidth - polaroidWidth - 20, finalX));

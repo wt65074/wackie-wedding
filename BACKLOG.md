@@ -28,6 +28,10 @@
 
 - [ ] **Add security questions before leaving messages** - Before users can leave a message, prompt them to answer one of three personal questions about Will & Jackie (e.g., "Where did we meet?", "What's our dog's name?"). Store validation in localStorage so they only need to answer once. Prevents random strangers from leaving messages.
 
+- [ ] **Prevent polaroids from landing on center text** - Update the polaroid landing position logic to create an exclusion zone around the "Coming Soon" text and subtext. Polaroids should never overlap the center content area.
+
+- [ ] **Prevent scroll on mobile** - Lock the viewport on mobile to prevent any scrolling. May need `overflow: hidden` on body/html, `touch-action: manipulation`, or handling `touchmove` events to prevent pull-to-refresh and elastic scrolling.
+
 ## In Progress
 
 ## Done

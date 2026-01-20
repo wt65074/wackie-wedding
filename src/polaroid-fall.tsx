@@ -230,6 +230,9 @@ export default function PolaroidFall(): React.ReactElement {
   const handleTouchEnd = useCallback(async (e: React.TouchEvent<HTMLDivElement>) => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
+    if (!leaveMessageEnabled) {
+      return;
+    }
 
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
       // Double tap detected - open message input
@@ -269,6 +272,9 @@ export default function PolaroidFall(): React.ReactElement {
 
   // Spacebar listener to open message modal
   useEffect(() => {
+    if (!leaveMessageEnabled) {
+      return;
+    }
     const handleKeyDown = async (e: KeyboardEvent) => {
       if (e.code === 'Space' && !isMessageInputOpen) {
         e.preventDefault();

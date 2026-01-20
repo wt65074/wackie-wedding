@@ -340,7 +340,7 @@ export default function PolaroidFall(): React.ReactElement {
       {/* Subtext - positioned relative to Coming Soon */}
       <div style={{
         position: 'absolute',
-        top: 'calc(50% + 6vh)',
+        top: 'calc(50% + clamp(2.5rem, 6vw, 4.5rem))',
         left: '50%',
         transform: 'translateX(-50%)',
         textAlign: 'center',

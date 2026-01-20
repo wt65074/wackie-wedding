@@ -96,6 +96,7 @@ export default function PolaroidFall(): React.ReactElement {
   const [messageInputImage, setMessageInputImage] = useState<string | null>(null);
   const nextIdRef = useRef<number>(0);
   const lastTapRef = useRef<number>(0);
+  const centerTextRef = useRef<HTMLDivElement>(null);
   const { getRandomImage, hasImages } = usePolaroidImages();
   const { getRandomMessage, submitMessage, hasMessages } = useMessages();
 
@@ -132,33 +133,47 @@ export default function PolaroidFall(): React.ReactElement {
       imageUrl = generateRandomImage();
     }
 
-    // Landing position - use rejection sampling to reduce center probability
-    const viewportCenterX = viewportWidth / 2;
-    const viewportCenterY = viewportHeight / 2;
-    const centerAvoidanceRadius = 250; // area to probabilistically avoid
+    // Polaroid dimensions (used for positioning calculations)
+    const polaroidWidth = 144;
+    const polaroidHeight = 180;
 
-    // Try to find a landing spot, with probability decreasing near center
+    // Landing position - use rejection sampling to avoid center text bounding box
+    // Get the actual bounding box from the DOM element
+    const centerTextBox = centerTextRef.current?.getBoundingClientRect();
+
+    // Padding to account for polaroid size (so polaroid edges don't overlap text)
+    const polaroidHalfWidth = polaroidWidth / 2;
+    const polaroidHalfHeight = polaroidHeight / 2;
+    const padding = 30;
+
+    // Try to find a landing spot that avoids the center text area
     let finalX: number;
     let finalY: number;
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 20;
 
     do {
       // Generate candidate position with gaussian distribution around click
       const spread = 120;
-      finalX = gaussianRandom(clickX, spread) - 72;
-      finalY = gaussianRandom(clickY, spread) - 90;
+      finalX = gaussianRandom(clickX, spread) - polaroidHalfWidth;
+      finalY = gaussianRandom(clickY, spread) - polaroidHalfHeight;
 
-      // Calculate distance from center
-      const distFromCenterX = finalX + 72 - viewportCenterX;
-      const distFromCenterY = finalY + 90 - viewportCenterY;
-      const distFromCenter = Math.sqrt(distFromCenterX * distFromCenterX + distFromCenterY * distFromCenterY);
+      // Check if polaroid would overlap the center text bounding box
+      let insideBox = false;
+      if (centerTextBox) {
+        const polaroidCenterX = finalX + polaroidHalfWidth;
+        const polaroidCenterY = finalY + polaroidHalfHeight;
+        const boxLeft = centerTextBox.left - polaroidHalfWidth - padding;
+        const boxRight = centerTextBox.right + polaroidHalfWidth + padding;
+        const boxTop = centerTextBox.top - polaroidHalfHeight - padding;
+        const boxBottom = centerTextBox.bottom + polaroidHalfHeight + padding;
 
-      // Probability of accepting this position increases with distance from center
-      // At center: ~10% chance, at edge of avoidance zone: ~90% chance, beyond: 100%
-      const acceptProbability = distFromCenter >= centerAvoidanceRadius
-        ? 1
-        : 0.1 + 0.8 * (distFromCenter / centerAvoidanceRadius);
+        insideBox = polaroidCenterX > boxLeft && polaroidCenterX < boxRight &&
+          polaroidCenterY > boxTop && polaroidCenterY < boxBottom;
+      }
+
+      // Virtually 0 probability (1%) inside the box, 100% outside
+      const acceptProbability = insideBox ? 0.0 : 1;
 
       if (Math.random() < acceptProbability) {
         break;
@@ -166,17 +181,16 @@ export default function PolaroidFall(): React.ReactElement {
 
       attempts++;
     } while (attempts < maxAttempts);
+    console.log(attempts)
 
     // Clamp to keep polaroids on screen
-    finalX = Math.max(20, Math.min(viewportWidth - 164, finalX));
-    finalY = Math.max(20, Math.min(viewportHeight - 200, finalY));
+    finalX = Math.max(20, Math.min(viewportWidth - polaroidWidth - 20, finalX));
+    finalY = Math.max(20, Math.min(viewportHeight - polaroidHeight - 20, finalY));
 
     const finalRotation = (Math.random() - 0.5) * 30;
 
-    // Center on click - offset by half the polaroid size (144px wide, ~180px tall)
+    // Center on click - offset by half the polaroid size
     // Also account for initial scale of 2.2
-    const polaroidWidth = 144;
-    const polaroidHeight = 180;
     const initialScale = 2.2;
     const startX = clickX - (polaroidWidth * initialScale) / 2;
     const startY = clickY - (polaroidHeight * initialScale) / 2;
@@ -320,36 +334,40 @@ export default function PolaroidFall(): React.ReactElement {
           .hint-mobile { display: flex; }
         }
       `}</style>
-      {/* Coming Soon - pinned at fixed position */}
-      <p style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        fontSize: 'clamp(2.5rem, 10vw, 6rem)',
-        fontFamily: '"Fraunces", Georgia, serif',
-        fontWeight: 400,
-        margin: 0,
-        whiteSpace: 'nowrap',
-        color: '#E8A87C',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }}>
-        Coming Soon
-      </p>
-      {/* Subtext - positioned relative to Coming Soon */}
-      <div style={{
-        position: 'absolute',
-        top: 'calc(50% + clamp(2.5rem, 6vw, 4.5rem))',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        textAlign: 'center',
-        pointerEvents: 'none',
-        zIndex: 0,
-        width: '90%',
-        maxWidth: '600px',
-      }}>
-        <TypingMessage />
+      {/* Center text container - used for polaroid avoidance bounding box */}
+      <div
+        ref={centerTextRef}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
+        {/* Coming Soon */}
+        <p style={{
+          fontSize: 'clamp(2.5rem, 10vw, 6rem)',
+          fontFamily: '"Fraunces", Georgia, serif',
+          fontWeight: 400,
+          margin: 0,
+          whiteSpace: 'nowrap',
+          color: '#E8A87C',
+        }}>
+          Coming Soon
+        </p>
+        {/* Subtext */}
+        <div style={{
+          textAlign: 'center',
+          width: '90vw',
+          maxWidth: '600px',
+        }}>
+          <TypingMessage />
+        </div>
       </div>
 
       <div style={{

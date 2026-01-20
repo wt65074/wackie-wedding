@@ -4,6 +4,8 @@ import { useMessages } from './hooks/useMessages';
 import MessageInput from './components/MessageInput';
 import TypingMessage from './components/TypingMessage';
 
+const leaveMessageEnabled = import.meta.env.VITE_ENABLE_USER_MESSAGES === 'TRUE';
+
 interface SwayResult {
   x: number;
   rotation: number;
@@ -67,7 +69,7 @@ function generateRandomImage(): string {
       const w = 50 + Math.random() * 100;
       const h = 50 + Math.random() * 100;
       const rotate = Math.random() * 360;
-      shapes.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}" opacity="${opacity}" transform="rotate(${rotate} ${x + w/2} ${y + h/2})"/>`);
+      shapes.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}" opacity="${opacity}" transform="rotate(${rotate} ${x + w / 2} ${y + h / 2})"/>`);
     }
   }
 
@@ -332,7 +334,7 @@ export default function PolaroidFall(): React.ReactElement {
       {/* Subtext - positioned relative to Coming Soon */}
       <div style={{
         position: 'absolute',
-        top: 'calc(50% + clamp(2.5rem, 7vw, 4.5rem))',
+        top: 'calc(50% + 6vh)',
         left: '50%',
         transform: 'translateX(-50%)',
         textAlign: 'center',
@@ -353,67 +355,99 @@ export default function PolaroidFall(): React.ReactElement {
         pointerEvents: 'none',
         zIndex: 0,
       }}>
-        {/* Desktop hint */}
-        <p className="hint-desktop" style={{
-          fontSize: 'clamp(0.75rem, 2vw, 1rem)',
-          fontFamily: '"Fraunces", Georgia, serif',
-          fontWeight: 500,
-          margin: 0,
-          color: '#B8B0A8',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-        }}>
-          Press
-          <span style={{
-            display: 'inline-block',
-            padding: '4px 16px',
-            background: 'rgba(184, 176, 168, 0.15)',
-            border: '1px solid rgba(184, 176, 168, 0.4)',
-            borderRadius: '4px',
-            fontSize: '0.85em',
-            fontStyle: 'normal',
-            fontFamily: '"Fraunces", Georgia, serif',
-          }}>
-            space
-          </span>
-          to leave a message
-        </p>
-        {/* Mobile hint */}
-        <p className="hint-mobile" style={{
-          fontSize: 'clamp(0.75rem, 2vw, 1rem)',
-          fontFamily: '"Fraunces", Georgia, serif',
-          fontWeight: 500,
-          margin: 0,
-          color: '#B8B0A8',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-        }}>
-          <span style={{
-            display: 'inline-block',
-            padding: '4px 16px',
-            background: 'rgba(184, 176, 168, 0.15)',
-            border: '1px solid rgba(184, 176, 168, 0.4)',
-            borderRadius: '4px',
-            fontSize: '0.85em',
-            fontStyle: 'normal',
-            fontFamily: '"Fraunces", Georgia, serif',
-          }}>
-            double tap
-          </span>
-          to leave a message
-        </p>
-      </div>
+        {leaveMessageEnabled ? (
+          <>
+            <p className="hint-desktop" style={{
+              fontSize: 'clamp(0.75rem, 2vw, 1rem)',
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontWeight: 500,
+              margin: 0,
+              color: '#B8B0A8',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}>
+              Press
+              <span style={{
+                display: 'inline-block',
+                padding: '4px 16px',
+                background: 'rgba(184, 176, 168, 0.15)',
+                border: '1px solid rgba(184, 176, 168, 0.4)',
+                borderRadius: '4px',
+                fontSize: '0.85em',
+                fontStyle: 'normal',
+                fontFamily: '"Fraunces", Georgia, serif',
+              }}>
+                space
+              </span>
+              to leave a message
+            </p>
+            <p className="hint-mobile" style={{
+              fontSize: 'clamp(0.75rem, 2vw, 1rem)',
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontWeight: 500,
+              margin: 0,
+              color: '#B8B0A8',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}>
+              <span style={{
+                display: 'inline-block',
+                padding: '4px 16px',
+                background: 'rgba(184, 176, 168, 0.15)',
+                border: '1px solid rgba(184, 176, 168, 0.4)',
+                borderRadius: '4px',
+                fontSize: '0.85em',
+                fontStyle: 'normal',
+                fontFamily: '"Fraunces", Georgia, serif',
+              }}>
+                double tap
+              </span>
+              to leave a message
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="hint-desktop" style={{
+              fontSize: 'clamp(0.75rem, 2vw, 1rem)',
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontWeight: 500,
+              margin: 0,
+              color: '#B8B0A8',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}>
+              Click to drop a photo.
+            </p>
+            <p className="hint-mobile" style={{
+              fontSize: 'clamp(0.75rem, 2vw, 1rem)',
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontWeight: 500,
+              margin: 0,
+              color: '#B8B0A8',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}>Tap to drop a photo.</p>
+          </>
+        )
+        }
+      </div >
 
-      {polaroids.map((polaroid) => (
-        <Polaroid key={polaroid.id} {...polaroid} onFadeComplete={removePolaroid} />
-      ))}
+      {
+        polaroids.map((polaroid) => (
+          <Polaroid key={polaroid.id} {...polaroid} onFadeComplete={removePolaroid} />
+        ))
+      }
 
-      {isMessageInputOpen && (
-        <MessageInput imageUrl={messageInputImage} onSubmit={handleMessageSubmit} onClose={handleMessageClose} />
-      )}
-    </div>
+      {
+        isMessageInputOpen && (
+          <MessageInput imageUrl={messageInputImage} onSubmit={handleMessageSubmit} onClose={handleMessageClose} />
+        )
+      }
+    </div >
   );
 }
 
@@ -434,7 +468,7 @@ function createSwayFunction(seed: number): (t: number) => SwayResult {
   return (t: number): SwayResult => {
     // Gentle sine waves for floating feel
     const x = Math.sin(t * 1.2 + offsets[0]) * 18 +
-              Math.sin(t * 0.7 + offsets[1]) * 12;
+      Math.sin(t * 0.7 + offsets[1]) * 12;
 
     const rotation = Math.sin(t * 0.9 + offsets[2]) * 7;
 
